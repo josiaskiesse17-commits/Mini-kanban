@@ -1,0 +1,712 @@
+openapi: 3.1.0
+info:
+  title: Mini Kanban API
+  version: 1.0.0
+  description: REST API for private Kanban boards and cards.
+servers:
+  - url: http://127.0.0.1:8000
+tags:
+  - name: Authentication
+  - name: Boards
+  - name: Columns
+  - name: Cards
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Username already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Log out
+      operationId: logoutUser
+      responses:
+        '204':
+          description: Logged out
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+  /boards:
+    get:
+      tags: [Boards]
+      summary: List the current user's boards
+      operationId: listBoards
+      responses:
+        '200':
+          description: User boards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Board'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+    post:
+      tags: [Boards]
+      summary: Create a board
+      operationId: createBoard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardCreate'
+      responses:
+        '201':
+          description: Board created with default columns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /boards/{board_id}:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    get:
+      tags: [Boards]
+      summary: Get a board
+      operationId: getBoard
+      responses:
+        '200':
+          description: Board with columns and cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Boards]
+      summary: Rename a board
+      operationId: updateBoard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardUpdate'
+      responses:
+        '200':
+          description: Board updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Boards]
+      summary: Delete a board
+      operationId: deleteBoard
+      responses:
+        '204':
+          description: Board deleted
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /boards/{board_id}/columns:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    post:
+      tags: [Columns]
+      summary: Create a column
+      operationId: createColumn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColumnCreate'
+      responses:
+        '201':
+          description: Column created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Column'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /boards/{board_id}/columns/reorder:
+    parameters:
+      - $ref: '#/components/parameters/BoardId'
+    put:
+      tags: [Columns]
+      summary: Reorder columns
+      operationId: reorderColumns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderRequest'
+      responses:
+        '200':
+          description: Columns reordered
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Column'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /columns/{column_id}:
+    parameters:
+      - $ref: '#/components/parameters/ColumnId'
+    patch:
+      tags: [Columns]
+      summary: Rename a column
+      operationId: updateColumn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColumnUpdate'
+      responses:
+        '200':
+          description: Column updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Column'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Columns]
+      summary: Delete a column
+      operationId: deleteColumn
+      responses:
+        '204':
+          description: Column deleted
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /columns/{column_id}/cards:
+    parameters:
+      - $ref: '#/components/parameters/ColumnId'
+    post:
+      tags: [Cards]
+      summary: Create a card
+      operationId: createCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardCreate'
+      responses:
+        '201':
+          description: Card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /columns/{column_id}/cards/reorder:
+    parameters:
+      - $ref: '#/components/parameters/ColumnId'
+    put:
+      tags: [Cards]
+      summary: Reorder cards in a column
+      operationId: reorderCards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderRequest'
+      responses:
+        '200':
+          description: Cards reordered
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /cards/{card_id}:
+    parameters:
+      - $ref: '#/components/parameters/CardId'
+    get:
+      tags: [Cards]
+      summary: Get a card
+      operationId: getCard
+      responses:
+        '200':
+          description: Card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Cards]
+      summary: Update a card
+      operationId: updateCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardUpdate'
+      responses:
+        '200':
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Cards]
+      summary: Delete a card
+      operationId: deleteCard
+      responses:
+        '204':
+          description: Card deleted
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /cards/{card_id}/move:
+    parameters:
+      - $ref: '#/components/parameters/CardId'
+    post:
+      tags: [Cards]
+      summary: Move a card to a column and position
+      operationId: moveCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardMove'
+      responses:
+        '200':
+          description: Card moved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/AuthorizationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+  parameters:
+    BoardId:
+      name: board_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    ColumnId:
+      name: column_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    CardId:
+      name: card_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    AuthenticationError:
+      description: Authentication is required or the token is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    AuthorizationError:
+      description: Resource belongs to another user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Request data is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+  schemas:
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          example: Resource not found
+    ValidationError:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            required: [loc, msg, type]
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
+    User:
+      type: object
+      required: [id, username, created_at]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        username:
+          type: string
+          minLength: 3
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 100
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    AuthResponse:
+      type: object
+      required: [access_token, token_type, user]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          enum: [bearer]
+        user:
+          $ref: '#/components/schemas/User'
+    Board:
+      type: object
+      required: [id, name, user_id, created_at, updated_at, columns]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        user_id:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Column'
+    BoardCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+    BoardUpdate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+    Column:
+      type: object
+      required: [id, board_id, name, position, cards]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        board_id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        position:
+          type: integer
+          minimum: 0
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+    ColumnCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+    ColumnUpdate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+    Card:
+      type: object
+      required: [id, column_id, title, description, priority, position, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        column_id:
+          type: integer
+          minimum: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        description:
+          type: string
+          maxLength: 5000
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        position:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CardCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        description:
+          type: string
+          maxLength: 5000
+          default: ''
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: medium
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        position:
+          type: integer
+          minimum: 0
+    CardUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        description:
+          type: string
+          maxLength: 5000
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        position:
+          type: integer
+          minimum: 0
+    CardMove:
+      type: object
+      required: [column_id, position]
+      properties:
+        column_id:
+          type: integer
+          minimum: 1
+        position:
+          type: integer
+          minimum: 0
+    ReorderRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            minimum: 1
+security:
+  - bearerAuth: []
